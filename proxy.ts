@@ -5,7 +5,7 @@ const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
 
 const PROTECTED = /^\/api\/schedule/;
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   if (!PROTECTED.test(req.nextUrl.pathname)) {
     return NextResponse.next();
   }
