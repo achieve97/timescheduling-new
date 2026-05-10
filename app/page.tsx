@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i}:00`);
 const BRAIN_DUMP_ROWS = 12;
 
@@ -94,12 +96,12 @@ export default function Home() {
             <a href="#pricing" className="hover:text-zinc-900 transition-colors">요금제</a>
           </div>
           <div className="flex items-center gap-3">
-            <button className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors px-4 py-2">
+            <Link href="/login" className="text-sm text-zinc-600 hover:text-zinc-900 transition-colors px-4 py-2">
               로그인
-            </button>
-            <button className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 transition-colors">
+            </Link>
+            <Link href="/register" className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 transition-colors">
               무료 시작
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -124,12 +126,12 @@ export default function Home() {
                 Time Box로 24시간을 빈틈없이 채우세요.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="bg-zinc-900 text-white px-8 py-4 rounded-xl text-base font-medium hover:bg-zinc-700 transition-colors">
+                <Link href="/register" className="bg-zinc-900 text-white px-8 py-4 rounded-xl text-base font-medium hover:bg-zinc-700 transition-colors text-center">
                   무료로 시작하기 →
-                </button>
-                <button className="border border-zinc-200 text-zinc-700 px-8 py-4 rounded-xl text-base font-medium hover:bg-zinc-50 transition-colors">
+                </Link>
+                <Link href="/login" className="border border-zinc-200 text-zinc-700 px-8 py-4 rounded-xl text-base font-medium hover:bg-zinc-50 transition-colors text-center">
                   데모 보기
-                </button>
+                </Link>
               </div>
               <p className="mt-6 text-sm text-zinc-400">신용카드 불필요 · 14일 무료 체험</p>
             </div>
@@ -220,9 +222,9 @@ export default function Home() {
             14일 무료 체험 후 마음에 들면 계속 사용하세요.<br />
             언제든 취소 가능합니다.
           </p>
-          <button className="bg-white text-zinc-900 px-10 py-4 rounded-xl text-base font-semibold hover:bg-zinc-100 transition-colors">
+          <Link href="/register" className="bg-white text-zinc-900 px-10 py-4 rounded-xl text-base font-semibold hover:bg-zinc-100 transition-colors">
             무료로 시작하기 →
-          </button>
+          </Link>
         </div>
       </section>
 
