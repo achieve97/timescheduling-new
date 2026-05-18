@@ -17,12 +17,14 @@ function SortableRow({
   onChange,
   onBlur,
   onToggle,
+  onClear,
 }: {
   item: BigThreeItem;
   draft: string | undefined;
   onChange: (val: string) => void;
   onBlur: () => void;
   onToggle: () => void;
+  onClear: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isOver, isDragging } =
     useSortable({
@@ -84,6 +86,18 @@ function SortableRow({
         onBlur={onBlur}
         placeholder={`목표 ${item.order}`}
       />
+
+      {item.content.trim() && (
+        <button
+          onClick={onClear}
+          aria-label="내용 지우기"
+          className="w-7 h-8 flex items-center justify-center shrink-0 text-[#c4a898] hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+        >
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }
@@ -100,6 +114,16 @@ export default function BigThree({ items, onItemsChange }: Props) {
     const res = await apiFetch(`/api/schedule/big3/${id}`, {
       method: "PUT",
       body: JSON.stringify({ content: next }),
+    });
+    const updated = await res.json();
+    onItemsChange(items.map((i) => (i.id === id ? updated : i)));
+    setDrafts((prev) => { const n = { ...prev }; delete n[id]; return n; });
+  }
+
+  async function clearItem(id: number) {
+    const res = await apiFetch(`/api/schedule/big3/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ content: "", completed: false }),
     });
     const updated = await res.json();
     onItemsChange(items.map((i) => (i.id === id ? updated : i)));
@@ -129,6 +153,7 @@ export default function BigThree({ items, onItemsChange }: Props) {
             onChange={(val) => setDrafts((prev) => ({ ...prev, [item.id]: val }))}
             onBlur={() => handleBlur(item.id)}
             onToggle={() => toggleCompleted(item)}
+            onClear={() => clearItem(item.id)}
           />
         ))}
       </SortableContext>
