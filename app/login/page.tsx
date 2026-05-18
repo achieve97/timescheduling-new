@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { setToken } from "@/lib/api";
@@ -26,7 +26,7 @@ export default function LoginPage() {
     return Object.keys(next).length === 0;
   }
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     if (!validate()) return;
 
@@ -54,33 +54,25 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#F8F0E6] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="inline-flex items-center gap-2 mb-6">
-            <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="5" height="5" rx="1" fill="white" />
-                <rect x="9" y="2" width="5" height="5" rx="1" fill="white" />
-                <rect x="2" y="9" width="5" height="5" rx="1" fill="white" />
-                <rect x="9" y="9" width="5" height="5" rx="1" fill="white" />
-              </svg>
-            </div>
-            <span className="font-semibold text-lg">TimeSync</span>
-          </div>
-          <h1 className="text-2xl font-bold text-zinc-900">로그인</h1>
-          <p className="text-zinc-500 text-sm mt-1">계정에 로그인하세요</p>
+          <Link href="/" className="inline-block mb-6">
+            <span className="text-2xl font-bold text-[#1B3A5C]">TimeSync</span>
+          </Link>
+          <h1 className="text-2xl font-bold text-[#1B3A5C]">로그인</h1>
+          <p className="text-[#4A6A8C] text-sm mt-1">계정에 로그인하세요</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-zinc-200 p-6 space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-[#e8d5c8] p-6 space-y-4 shadow-sm" noValidate>
           {errors.general && (
-            <div className="bg-red-50 border border-red-100 text-red-600 text-sm px-4 py-3 rounded-lg">
+            <div className="bg-red-50 border border-red-100 text-red-500 text-sm px-4 py-3 rounded-2xl">
               {errors.general}
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1.5" htmlFor="email">
+            <label className="block text-sm font-semibold text-[#1B3A5C] mb-1.5" htmlFor="email">
               이메일
             </label>
             <input
@@ -88,8 +80,8 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition
-                ${errors.email ? "border-red-300 bg-red-50" : "border-zinc-200 bg-white"}`}
+              className={`w-full px-3 py-2.5 rounded-xl border text-sm text-[#1B3A5C] focus:outline-none focus:ring-2 focus:ring-[#E8634A] focus:border-transparent transition placeholder:text-[#c4a898]
+                ${errors.email ? "border-red-300 bg-red-50" : "border-[#e8d5c8] bg-white"}`}
               placeholder="name@example.com"
               autoComplete="email"
             />
@@ -97,7 +89,7 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1.5" htmlFor="password">
+            <label className="block text-sm font-semibold text-[#1B3A5C] mb-1.5" htmlFor="password">
               비밀번호
             </label>
             <input
@@ -105,8 +97,8 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={`w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition
-                ${errors.password ? "border-red-300 bg-red-50" : "border-zinc-200 bg-white"}`}
+              className={`w-full px-3 py-2.5 rounded-xl border text-sm text-[#1B3A5C] focus:outline-none focus:ring-2 focus:ring-[#E8634A] focus:border-transparent transition placeholder:text-[#c4a898]
+                ${errors.password ? "border-red-300 bg-red-50" : "border-[#e8d5c8] bg-white"}`}
               placeholder="비밀번호를 입력하세요"
               autoComplete="current-password"
             />
@@ -116,15 +108,15 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-zinc-900 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-zinc-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full border-2 border-[#E8634A] text-[#E8634A] py-2.5 rounded-xl text-sm font-semibold hover:bg-[#E8634A] hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "로그인 중..." : "로그인"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-zinc-500 mt-4">
+        <p className="text-center text-sm text-[#4A6A8C] mt-4">
           계정이 없으신가요?{" "}
-          <Link href="/register" className="text-zinc-900 font-medium hover:underline">
+          <Link href="/register" className="text-[#E8634A] font-semibold hover:underline">
             회원가입
           </Link>
         </p>

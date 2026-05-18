@@ -77,14 +77,14 @@ export default function BrainDump({ date }: Props) {
 
   return (
     <div className="flex flex-col">
-      <div className="py-1.5 px-3 text-center text-[#b5651d] font-medium border-b border-zinc-200 text-sm">
+      <div className="py-1.5 px-3 text-center text-[#E8634A] font-semibold border-b border-[#e8d5c8] text-sm">
         Brain Dump
       </div>
 
       {items.map((item) => (
-        <div key={item.id} className="flex items-center border-b border-zinc-100 group">
+        <div key={item.id} className="flex items-center border-b border-[#f0e4da] group">
           <input
-            className="flex-1 px-3 py-2 text-sm text-zinc-700 bg-transparent focus:outline-none focus:bg-amber-50 transition"
+            className="flex-1 px-3 py-2 text-sm text-[#1B3A5C] bg-transparent focus:outline-none focus:bg-[#FDF8F4] transition"
             value={editDrafts[item.id] ?? item.content}
             onChange={(e) =>
               setEditDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))
@@ -93,7 +93,7 @@ export default function BrainDump({ date }: Props) {
           />
           <button
             onClick={() => handleDelete(item.id)}
-            className="w-8 h-8 flex items-center justify-center shrink-0 text-zinc-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+            className="w-8 h-8 flex items-center justify-center shrink-0 text-[#c4a898] hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
             aria-label="삭제"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -103,9 +103,9 @@ export default function BrainDump({ date }: Props) {
         </div>
       ))}
 
-      <div className="flex items-center gap-0 border-t border-zinc-100 mt-auto">
+      <div className="flex items-center border-t border-[#f0e4da] mt-auto">
         <input
-          className={`flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-zinc-300 ${
+          className={`flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none placeholder:text-[#c4a898] text-[#1B3A5C] ${
             error ? "placeholder:text-red-300" : ""
           }`}
           value={newContent}
@@ -118,7 +118,7 @@ export default function BrainDump({ date }: Props) {
         />
         <button
           onClick={handleAdd}
-          className="px-3 py-2 text-xs text-zinc-400 hover:text-[#b5651d] transition shrink-0"
+          className="px-3 py-2 text-xs text-[#c4a898] hover:text-[#E8634A] transition shrink-0"
         >
           + 추가
         </button>
