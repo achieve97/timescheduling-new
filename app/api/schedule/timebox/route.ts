@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     hour: item.hour,
     isFirstHalf: item.isFirstHalf,
     content: decrypt(item.content),
+    notes: item.notes ? decrypt(item.notes) : "",
   }));
 
   return NextResponse.json(data);
@@ -47,7 +48,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ message: "요청 형식이 올바르지 않습니다." }, { status: 400 });
   }
 
-  const { date, hour, isFirstHalf, content } = body;
+  const { date, hour, isFirstHalf, content, notes } = body;
 
   const parsedDate = parseDate(date);
 
@@ -76,10 +77,21 @@ export async function PUT(req: NextRequest) {
     return new NextResponse(null, { status: 204 });
   }
 
+  const hasNotes = typeof notes === "string";
+
   const item = await prisma.timeBox.upsert({
     where: { scheduleId_hour_isFirstHalf: { scheduleId: schedule.id, hour, isFirstHalf } },
-    update: { content: encrypt(content) },
-    create: { scheduleId: schedule.id, hour, isFirstHalf, content: encrypt(content) },
+    update: {
+      content: encrypt(content),
+      ...(hasNotes ? { notes: encrypt(notes) } : {}),
+    },
+    create: {
+      scheduleId: schedule.id,
+      hour,
+      isFirstHalf,
+      content: encrypt(content),
+      notes: hasNotes ? encrypt(notes) : "",
+    },
   });
 
   return NextResponse.json({
@@ -87,5 +99,6 @@ export async function PUT(req: NextRequest) {
     hour: item.hour,
     isFirstHalf: item.isFirstHalf,
     content,
+    notes: hasNotes ? notes : (item.notes ? decrypt(item.notes) : ""),
   });
 }

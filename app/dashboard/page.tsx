@@ -11,6 +11,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
+import Link from "next/link";
 import BigThree from "./_components/BigThree";
 import BrainDump from "./_components/BrainDump";
 import TimeBox from "./_components/TimeBox";
@@ -28,6 +29,7 @@ export interface BrainDumpItem {
 }
 
 export type Slots = Record<string, string>;
+export type SlotMeta = Record<string, { bigThreeOrder: number }>;
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -36,6 +38,8 @@ export default function DashboardPage() {
   const [bigThreeItems, setBigThreeItems] = useState<BigThreeItem[]>([]);
   const [brainDumpItems, setBrainDumpItems] = useState<BrainDumpItem[]>([]);
   const [slots, setSlots] = useState<Slots>({});
+  const [slotMeta, setSlotMeta] = useState<SlotMeta>({});
+  const [slotNotes, setSlotNotes] = useState<Record<string, string>>({});
   const [activeDragItem, setActiveDragItem] = useState<BrainDumpItem | null>(null);
   const [activeBig3Item, setActiveBig3Item] = useState<BigThreeItem | null>(null);
 
@@ -48,20 +52,43 @@ export default function DashboardPage() {
   }, [router]);
 
   useEffect(() => {
+    if (!bigThreeItems.length || !Object.keys(slots).length) return;
+    setSlotMeta((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      Object.entries(slots).forEach(([key, content]) => {
+        if (!content.trim() || next[key]) return;
+        const match = bigThreeItems.find((b) => b.content.trim() === content.trim());
+        if (match) {
+          next[key] = { bigThreeOrder: match.order };
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [bigThreeItems, slots]);
+
+  useEffect(() => {
     if (!ready) return;
     setBigThreeItems([]);
     setBrainDumpItems([]);
     setSlots({});
+    setSlotMeta({});
+    setSlotNotes({});
     apiFetch(`/api/schedule/big3?date=${date}`).then((r) => r.json()).then(setBigThreeItems);
     apiFetch(`/api/schedule/brain-dump?date=${date}`).then((r) => r.json()).then(setBrainDumpItems);
     apiFetch(`/api/schedule/timebox?date=${date}`)
       .then((r) => r.json())
-      .then((data: Array<{ hour: number; isFirstHalf: boolean; content: string }>) => {
+      .then((data: Array<{ hour: number; isFirstHalf: boolean; content: string; notes: string }>) => {
         const map: Slots = {};
-        data.forEach(({ hour, isFirstHalf, content }) => {
-          map[`${hour}-${String(isFirstHalf)}`] = content;
+        const notesMap: Record<string, string> = {};
+        data.forEach(({ hour, isFirstHalf, content, notes }) => {
+          const k = `${hour}-${String(isFirstHalf)}`;
+          map[k] = content;
+          if (notes) notesMap[k] = notes;
         });
         setSlots(map);
+        setSlotNotes(notesMap);
       });
   }, [date, ready]);
 
@@ -136,13 +163,69 @@ export default function DashboardPage() {
     });
   }
 
+  async function saveSlotNotes(slotKey: string, notesVal: string) {
+    const parts = slotKey.split("-");
+    const hour = parseInt(parts[0]);
+    const isFirstHalf = parts[1] === "true";
+    const content = slots[slotKey] ?? "";
+    setSlotNotes((prev) => ({ ...prev, [slotKey]: notesVal }));
+    await apiFetch("/api/schedule/timebox", {
+      method: "PUT",
+      body: JSON.stringify({ date, hour, isFirstHalf, content, notes: notesVal }),
+    });
+  }
+
+  async function clearTimeBoxSlot(slotKey: string) {
+    const parts = slotKey.split("-");
+    const hour = parseInt(parts[0]);
+    const isFirstHalf = parts[1] === "true";
+    setSlots((prev) => { const n = { ...prev }; delete n[slotKey]; return n; });
+    setSlotNotes((prev) => { const n = { ...prev }; delete n[slotKey]; return n; });
+    setSlotMeta((prev) => { const n = { ...prev }; delete n[slotKey]; return n; });
+    await apiFetch("/api/schedule/timebox", {
+      method: "PUT",
+      body: JSON.stringify({ date, hour, isFirstHalf, content: "" }),
+    });
+  }
+
   async function fillTimeBoxSlot(item: BigThreeItem, hour: number, isFirstHalf: boolean) {
     const k = `${hour}-${String(isFirstHalf)}`;
     setSlots((prev) => ({ ...prev, [k]: item.content }));
+    setSlotMeta((prev) => ({ ...prev, [k]: { bigThreeOrder: item.order } }));
     await apiFetch("/api/schedule/timebox", {
       method: "PUT",
       body: JSON.stringify({ date, hour, isFirstHalf, content: item.content }),
     });
+  }
+
+  async function fillTimeBoxRange(item: BigThreeItem, startIdx: number, endIdx: number) {
+    if (endIdx <= startIdx) return;
+    const updates = Array.from({ length: endIdx - startIdx }, (_, i) => {
+      const idx = startIdx + i;
+      return { hour: Math.floor(idx / 2), isFirstHalf: idx % 2 === 0 };
+    });
+    setSlots((prev) => {
+      const next = { ...prev };
+      updates.forEach(({ hour, isFirstHalf }) => {
+        next[`${hour}-${String(isFirstHalf)}`] = item.content;
+      });
+      return next;
+    });
+    setSlotMeta((prev) => {
+      const next = { ...prev };
+      updates.forEach(({ hour, isFirstHalf }) => {
+        next[`${hour}-${String(isFirstHalf)}`] = { bigThreeOrder: item.order };
+      });
+      return next;
+    });
+    await Promise.all(
+      updates.map(({ hour, isFirstHalf }) =>
+        apiFetch("/api/schedule/timebox", {
+          method: "PUT",
+          body: JSON.stringify({ date, hour, isFirstHalf, content: item.content }),
+        })
+      )
+    );
   }
 
   function handleDragStart(event: DragStartEvent) {
@@ -198,6 +281,12 @@ export default function DashboardPage() {
             onChange={(e) => setDate(e.target.value)}
             className="text-sm border border-[#e8d5c8] rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#E8634A] focus:border-transparent text-[#1B3A5C] bg-white transition"
           />
+          <Link
+            href="/history"
+            className="text-sm text-[#4A6A8C] hover:text-[#E8634A] transition px-3 py-1.5"
+          >
+            기록
+          </Link>
           <button
             onClick={handleLogout}
             className="text-sm text-[#4A6A8C] hover:text-[#E8634A] transition px-3 py-1.5"
@@ -226,6 +315,7 @@ export default function DashboardPage() {
                 items={bigThreeItems}
                 onItemsChange={setBigThreeItems}
                 onMoveToBrainDump={moveToBrainDump}
+                onSchedule={fillTimeBoxRange}
               />
               <div className="flex-1 border-t border-[#e8d5c8]">
                 <BrainDump
@@ -242,6 +332,10 @@ export default function DashboardPage() {
               date={date}
               slots={slots}
               onSlotsChange={setSlots}
+              slotMeta={slotMeta}
+              slotNotes={slotNotes}
+              onNotesSave={saveSlotNotes}
+              onSlotClear={clearTimeBoxSlot}
               isBig3Dragging={activeBig3Item !== null}
             />
           </div>

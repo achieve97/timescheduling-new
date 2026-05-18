@@ -58,6 +58,7 @@ model TimeBox {
   hour        Int
   isFirstHalf Boolean
   content     String        @default("")
+  notes       String        @default("")
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   scheduleId  Int
