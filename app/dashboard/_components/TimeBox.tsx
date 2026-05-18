@@ -1,37 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
+import { useDroppable } from "@dnd-kit/core";
+
+type Slots = Record<string, string>;
 
 interface Props {
   date: string;
+  slots: Slots;
+  onSlotsChange: (slots: Slots) => void;
+  isBig3Dragging: boolean;
 }
 
-type SlotKey = string;
+function DroppableSlot({
+  hour,
+  isFirstHalf,
+  value,
+  onChange,
+  onBlur,
+  isBig3Dragging,
+}: {
+  hour: number;
+  isFirstHalf: boolean;
+  value: string;
+  onChange: (val: string) => void;
+  onBlur: () => void;
+  isBig3Dragging: boolean;
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `timebox-${hour}-${String(isFirstHalf)}`,
+    data: { type: "timebox", hour, isFirstHalf },
+  });
 
-function key(hour: number, isFirstHalf: boolean): SlotKey {
-  return `${hour}-${String(isFirstHalf)}`;
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex-1 border-r last:border-r-0 border-[#f0e4da] transition-colors
+        ${isOver ? "bg-[#FDF0EC]" : isBig3Dragging ? "bg-[#FFFCF9]" : ""}`}
+    >
+      <input
+        className="w-full px-2 py-1.5 text-xs text-[#1B3A5C] bg-transparent focus:bg-[#FDF8F4] focus:outline-none transition"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        placeholder=""
+      />
+    </div>
+  );
 }
 
-export default function TimeBox({ date }: Props) {
-  const [slots, setSlots] = useState<Record<SlotKey, string>>({});
-  const [drafts, setDrafts] = useState<Record<SlotKey, string>>({});
+export default function TimeBox({ date, slots, onSlotsChange, isBig3Dragging }: Props) {
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    setSlots({});
-    setDrafts({});
-    apiFetch(`/api/schedule/timebox?date=${date}`)
-      .then((r) => r.json())
-      .then(
-        (data: Array<{ hour: number; isFirstHalf: boolean; content: string }>) => {
-          const map: Record<SlotKey, string> = {};
-          data.forEach((item) => {
-            map[key(item.hour, item.isFirstHalf)] = item.content;
-          });
-          setSlots(map);
-        }
-      );
-  }, [date]);
+  function key(hour: number, isFirstHalf: boolean) {
+    return `${hour}-${String(isFirstHalf)}`;
+  }
 
   async function handleBlur(hour: number, isFirstHalf: boolean) {
     const k = key(hour, isFirstHalf);
@@ -45,7 +69,7 @@ export default function TimeBox({ date }: Props) {
       body: JSON.stringify({ date, hour, isFirstHalf, content: next }),
     });
 
-    setSlots((prev) => ({ ...prev, [k]: next }));
+    onSlotsChange({ ...slots, [k]: next });
     setDrafts((prev) => {
       const copy = { ...prev };
       delete copy[k];
@@ -79,20 +103,15 @@ export default function TimeBox({ date }: Props) {
             {([true, false] as const).map((isFirstHalf) => {
               const k = key(hour, isFirstHalf);
               return (
-                <div
+                <DroppableSlot
                   key={String(isFirstHalf)}
-                  className="flex-1 border-r last:border-r-0 border-[#f0e4da]"
-                >
-                  <input
-                    className="w-full px-2 py-1.5 text-xs text-[#1B3A5C] bg-transparent focus:bg-[#FDF8F4] focus:outline-none transition"
-                    value={drafts[k] ?? slots[k] ?? ""}
-                    onChange={(e) =>
-                      setDrafts((prev) => ({ ...prev, [k]: e.target.value }))
-                    }
-                    onBlur={() => handleBlur(hour, isFirstHalf)}
-                    placeholder=""
-                  />
-                </div>
+                  hour={hour}
+                  isFirstHalf={isFirstHalf}
+                  value={drafts[k] ?? slots[k] ?? ""}
+                  onChange={(val) => setDrafts((prev) => ({ ...prev, [k]: val }))}
+                  onBlur={() => handleBlur(hour, isFirstHalf)}
+                  isBig3Dragging={isBig3Dragging}
+                />
               );
             })}
           </div>

@@ -27,13 +27,17 @@ export interface BrainDumpItem {
   content: string;
 }
 
+export type Slots = Record<string, string>;
+
 export default function DashboardPage() {
   const router = useRouter();
   const [date, setDate] = useState(getTodayString());
   const [ready, setReady] = useState(false);
   const [bigThreeItems, setBigThreeItems] = useState<BigThreeItem[]>([]);
   const [brainDumpItems, setBrainDumpItems] = useState<BrainDumpItem[]>([]);
+  const [slots, setSlots] = useState<Slots>({});
   const [activeDragItem, setActiveDragItem] = useState<BrainDumpItem | null>(null);
+  const [activeBig3Item, setActiveBig3Item] = useState<BigThreeItem | null>(null);
 
   useEffect(() => {
     if (!getToken()) {
@@ -47,8 +51,18 @@ export default function DashboardPage() {
     if (!ready) return;
     setBigThreeItems([]);
     setBrainDumpItems([]);
+    setSlots({});
     apiFetch(`/api/schedule/big3?date=${date}`).then((r) => r.json()).then(setBigThreeItems);
     apiFetch(`/api/schedule/brain-dump?date=${date}`).then((r) => r.json()).then(setBrainDumpItems);
+    apiFetch(`/api/schedule/timebox?date=${date}`)
+      .then((r) => r.json())
+      .then((data: Array<{ hour: number; isFirstHalf: boolean; content: string }>) => {
+        const map: Slots = {};
+        data.forEach(({ hour, isFirstHalf, content }) => {
+          map[`${hour}-${String(isFirstHalf)}`] = content;
+        });
+        setSlots(map);
+      });
   }, [date, ready]);
 
   function handleLogout() {
@@ -122,15 +136,25 @@ export default function DashboardPage() {
     });
   }
 
+  async function fillTimeBoxSlot(item: BigThreeItem, hour: number, isFirstHalf: boolean) {
+    const k = `${hour}-${String(isFirstHalf)}`;
+    setSlots((prev) => ({ ...prev, [k]: item.content }));
+    await apiFetch("/api/schedule/timebox", {
+      method: "PUT",
+      body: JSON.stringify({ date, hour, isFirstHalf, content: item.content }),
+    });
+  }
+
   function handleDragStart(event: DragStartEvent) {
-    if (event.active.data.current?.type === "brain-dump") {
-      setActiveDragItem(event.active.data.current.item);
-    }
+    const type = event.active.data.current?.type;
+    if (type === "brain-dump") setActiveDragItem(event.active.data.current!.item);
+    if (type === "big3") setActiveBig3Item(event.active.data.current!.item);
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveDragItem(null);
+    setActiveBig3Item(null);
     if (!over) return;
 
     const activeType = active.data.current?.type;
@@ -143,6 +167,15 @@ export default function DashboardPage() {
 
     if (activeType === "big3" && overType === "big3" && active.id !== over.id) {
       reorderBigThree(active.data.current!.item.id, over.data.current!.item.id);
+      return;
+    }
+
+    if (activeType === "big3" && overType === "timebox") {
+      fillTimeBoxSlot(
+        active.data.current!.item,
+        over.data.current!.hour,
+        over.data.current!.isFirstHalf,
+      );
     }
   }
 
@@ -205,13 +238,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <TimeBox date={date} />
+            <TimeBox
+              date={date}
+              slots={slots}
+              onSlotsChange={setSlots}
+              isBig3Dragging={activeBig3Item !== null}
+            />
           </div>
 
           <DragOverlay>
-            {activeDragItem ? (
+            {(activeDragItem ?? activeBig3Item) ? (
               <div className="bg-white border-2 border-[#E8634A] rounded-xl px-3 py-2 text-sm text-[#1B3A5C] shadow-lg">
-                {activeDragItem.content}
+                {activeDragItem?.content ?? activeBig3Item?.content}
               </div>
             ) : null}
           </DragOverlay>
