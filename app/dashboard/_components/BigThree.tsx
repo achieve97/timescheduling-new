@@ -9,6 +9,7 @@ import type { BigThreeItem } from "../page";
 interface Props {
   items: BigThreeItem[];
   onItemsChange: (items: BigThreeItem[]) => void;
+  onMoveToBrainDump: (item: BigThreeItem) => void;
 }
 
 function SortableRow({
@@ -18,6 +19,7 @@ function SortableRow({
   onBlur,
   onToggle,
   onClear,
+  onDoubleClick,
 }: {
   item: BigThreeItem;
   draft: string | undefined;
@@ -25,6 +27,7 @@ function SortableRow({
   onBlur: () => void;
   onToggle: () => void;
   onClear: () => void;
+  onDoubleClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isOver, isDragging } =
     useSortable({
@@ -84,6 +87,7 @@ function SortableRow({
         value={draft ?? item.content}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
+        onDoubleClick={onDoubleClick}
         placeholder={`목표 ${item.order}`}
       />
 
@@ -102,7 +106,7 @@ function SortableRow({
   );
 }
 
-export default function BigThree({ items, onItemsChange }: Props) {
+export default function BigThree({ items, onItemsChange, onMoveToBrainDump }: Props) {
   const [drafts, setDrafts] = useState<Record<number, string>>({});
 
   async function handleBlur(id: number) {
@@ -154,6 +158,7 @@ export default function BigThree({ items, onItemsChange }: Props) {
             onBlur={() => handleBlur(item.id)}
             onToggle={() => toggleCompleted(item)}
             onClear={() => clearItem(item.id)}
+            onDoubleClick={() => onMoveToBrainDump(item)}
           />
         ))}
       </SortableContext>

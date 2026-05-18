@@ -56,6 +56,26 @@ export default function DashboardPage() {
     router.push("/login");
   }
 
+  async function moveToBrainDump(bigItem: BigThreeItem) {
+    if (!bigItem.content.trim()) return;
+
+    const [newBrainItem] = await Promise.all([
+      apiFetch("/api/schedule/brain-dump", {
+        method: "POST",
+        body: JSON.stringify({ date, content: bigItem.content }),
+      }).then((r) => r.json()),
+      apiFetch(`/api/schedule/big3/${bigItem.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ content: "", completed: false }),
+      }),
+    ]);
+
+    setBrainDumpItems((prev) => [...prev, newBrainItem]);
+    setBigThreeItems((prev) =>
+      prev.map((b) => (b.id === bigItem.id ? { ...b, content: "", completed: false } : b))
+    );
+  }
+
   async function moveToBigThree(brainItem: BrainDumpItem) {
     const emptySlot = bigThreeItems.find((b) => !b.content.trim());
     if (!emptySlot) return;
@@ -172,6 +192,7 @@ export default function DashboardPage() {
               <BigThree
                 items={bigThreeItems}
                 onItemsChange={setBigThreeItems}
+                onMoveToBrainDump={moveToBrainDump}
               />
               <div className="flex-1 border-t border-[#e8d5c8]">
                 <BrainDump
